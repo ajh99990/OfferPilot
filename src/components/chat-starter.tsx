@@ -21,14 +21,19 @@ type ChatMessage = {
   text: string;
 };
 
+const AGENT_API_URL =
+  process.env.NEXT_PUBLIC_AGENT_API_URL ?? "http://localhost:8787/api/chat";
+
 const initialMessages: ChatMessage[] = [
   {
     id: "assistant-welcome",
     role: "assistant",
     text: [
-      "这是一个最小可用的 **Next.js + AI Elements + TypeScript + Tailwind CSS** starter。",
+      "前端已经接上独立的 LangChain Agent 服务。",
       "",
-      "目前先不接后端，所以这里用的是前端本地 mock。你之后可以把提交逻辑替换成 Egg.js / LangChain / LangGraph 的接口。",
+      `默认请求地址：\`${AGENT_API_URL}\``,
+      "",
+      "你现在发送的内容会真正请求后端模型，而不是本地 mock。",
     ].join("\n"),
   },
 ];
@@ -38,19 +43,6 @@ const suggestions = [
   "写一个 Tailwind 按钮组件",
   "解释一下 LangGraph 适合做什么",
 ];
-
-function buildMockReply(input: string) {
-  return [
-    `你刚刚输入的是：**${input}**`,
-    "",
-    "这个 starter 现在只演示前端消息 UI：",
-    "- 使用 AI Elements 的 Conversation / Message 组件",
-    "- 使用 Tailwind CSS 4 做基础样式",
-    "- 保持 Next.js App Router + TypeScript 结构",
-    "",
-    "等你接入后端时，可以把这里替换成真实的流式请求。",
-  ].join("\n");
-}
 
 export function ChatStarter() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -75,24 +67,59 @@ export function ChatStarter() {
     setInput("");
     setIsSending(true);
 
-    window.setTimeout(() => {
+    try {
+      const response = await fetch(AGENT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((message) => ({
+            role: message.role,
+            content: message.text,
+          })),
+        }),
+      });
+
+      const data = (await response.json()) as {
+        text?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "请求后端服务失败");
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          text: buildMockReply(value),
+          text: data.text?.trim() || "模型没有返回文本内容。",
         },
       ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text:
+            error instanceof Error
+              ? `请求失败：${error.message}`
+              : "请求失败：未知错误",
+        },
+      ]);
+    } finally {
       setIsSending(false);
-    }, 450);
+    }
   }
 
   const emptyState = useMemo(
     () => (
       <ConversationEmptyState
         title="还没有消息"
-        description="输入一条消息，看看 AI Elements 的对话 UI 长什么样。"
+        description="输入一条消息，看看前端是否已经成功接上 agent 服务。"
         icon={<SparklesIcon className="size-5" />}
       />
     ),
@@ -105,15 +132,15 @@ export function ChatStarter() {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-6 py-5">
           <div>
             <p className="text-sm font-medium text-muted-foreground">
-              Next.js + AI Elements Starter
+              Next.js + AI Elements + LangChain Agent
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              先把前端聊天壳子搭起来
+              前端聊天 UI 已连接独立 Agent 服务
             </h1>
           </div>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            当前页面只负责前端展示，不依赖后端。后续你可以把发送逻辑替换成
-            Egg.js + LangChain / LangGraph 的接口，保留这套 UI 组件继续用。
+            这个页面负责聊天展示和输入，后端模型能力来自独立运行的
+            react-agent-js 服务。现在是非流式调用，后面可以再升级为流式输出。
           </p>
         </div>
       </header>
@@ -161,12 +188,12 @@ export function ChatStarter() {
               <textarea
                 className="min-h-28 w-full resize-none rounded-2xl border bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="输入点什么，先验证 UI 跑通。后面再把这里接到你的 Egg.js / LangGraph 接口。"
+                placeholder="输入消息，发送到你的 LangChain Agent 服务。"
                 value={input}
               />
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                  这是纯前端 mock；现在不调用任何模型。
+                  后端地址：{AGENT_API_URL}
                 </p>
                 <Button disabled={!canSubmit} type="submit">
                   {isSending ? "生成中..." : "发送消息"}
