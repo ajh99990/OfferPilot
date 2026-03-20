@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AI Elements CLI 生成的组件较多，先忽略生成代码本身，避免影响业务代码 lint。
+    "src/components/ai-elements/**",
   ]),
 ]);
 
