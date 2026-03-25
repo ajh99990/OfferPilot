@@ -1,72 +1,152 @@
-# Next.js AI Elements Starter
+# OfferPilot Web
 
-一个最小可用的前端 starter，目标是先把下面这套组合跑起来：
+一个基于 Next.js 16 的求职 Agent 前端，包含：
 
-- Next.js 16
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- AI Elements
-- AI SDK（当前只装依赖，后续你再接 Egg.js / LangChain / LangGraph）
+- 任务首页与任务工作台
+- LangGraph 实时消息流
+- HITL 中断卡片
+- 定制简历详情视图
+- 登录中心短信验证码登录
+- PostgreSQL 用户资料与线程归属
+- 阿里云 OSS 简历上传与签名访问
 
-## 项目位置
+## 本地启动
+
+先准备本地环境变量：
 
 ```bash
-/Users/yangguang/Desktop/简历/nextjs-ai-elements-starter
+cp .env.development.example .env.local
 ```
 
-## 已完成的事情
-
-- 使用 `create-next-app` 创建了 App Router + TypeScript + Tailwind 项目
-- 按 AI Elements 文档要求安装了 `ai` 和 AI Elements 组件
-- 自动生成了 `components.json`
-- 注入了 `src/components/ai-elements/*` 与相关 `ui/*` 组件
-- 创建了一个本地 mock 的聊天首页，方便你先确认 UI 是否可用
-
-## 现在怎么启动
+然后把 `.env.local` 里的真实密钥和服务地址补进去。
 
 ```bash
-cd /Users/yangguang/Desktop/简历/nextjs-ai-elements-starter
+pnpm install
 pnpm dev
 ```
 
-打开：<http://localhost:3000>
+默认打开：`http://localhost:3000`
 
-## 当前实现说明
+## 生产部署前置条件
 
-当前页面不连接任何后端，只是演示：
+这个前端不是独立单体，生产环境至少还需要这些外部服务：
 
-- `Conversation`
-- `Message`
-- `MessageResponse`
-- 基础输入区
+- LangGraph 服务
+- 登录中心
+- PostgreSQL
+- 阿里云 OSS / STS
 
-也就是说，这个 starter 现在是“前端壳子先跑通”的状态。
+另外，生产环境应通过 HTTPS 暴露站点。因为认证 cookie 在 `NODE_ENV=production` 下会带 `secure` 标记。
 
-## 后续你接 Egg.js / LangChain / LangGraph 时
+## 数据库初始化
 
-你主要会替换这里：
+首次上线前，请先在目标 PostgreSQL 执行：
 
-- `src/components/chat-starter.tsx`
-  - 把本地 mock 的 `handleSubmit()`
-  - 改成调用你的 Egg.js 接口
-  - 再把返回结果接到真实消息流里
+```bash
+psql "$DATABASE_URL" -f sql/login-auth.sql
+```
 
-## 关于依赖
+如果你不用 `DATABASE_URL`，也可以改成使用 `PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD` 连接后再执行同一份 SQL。
 
-AI Elements CLI 默认会拉进一批组件和依赖，数量会比“纯最小聊天页”更多，这是正常的。
+## 环境变量
 
-原因是：
+环境变量模板分成两类：
 
-- AI Elements 本身是一个组件集合，不只是单个聊天框
-- CLI 会把常用基础 UI 与 AI 组件一并准备好
-- 这样你后面继续加 reasoning、tool、artifact、sources 等组件时，不用再反复补环境
+- [`.env.development.example`](./.env.development.example)：本地开发参考
+- [`.env.production.example`](./.env.production.example)：生产 / Docker 参考
+- [`.env.example`](./.env.example)：总入口说明
 
-如果你后面确定只保留极少数组件，我可以再帮你做一轮“依赖瘦身”。
+最容易混淆的一点是数据库主机名：
 
-## 建议的下一步
+- 本地开发通常用 `localhost`
+- Docker / 容器网络里才适合用 `postgres` 这类 service name
 
-1. 先确认页面能正常跑起来
-2. 再决定你和 Egg.js 的接口协议
-3. 然后把前端输入提交替换为真实请求
-4. 最后再接 LangChain / LangGraph 的流式输出
+其中要特别注意两类变量：
+
+### 1. 构建时变量
+
+- `NEXT_PUBLIC_LANGGRAPH_API_URL`
+- `NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID`
+
+它们会被直接写进浏览器产物里，所以在 Docker 场景下，必须在 **构建镜像时** 传入正确值。
+
+### 2. 运行时变量
+
+- `LANGGRAPH_API_URL`
+- `LOGIN_CENTER_API_URL`
+- `DATABASE_URL` 或 `PG*`
+- `OSS_ACCESS_KEY_ID`
+- `OSS_ACCESS_KEY_SECRET`
+- `OSS_BUCKET`
+- `OSS_REGION`
+- `OSS_ROLE_ARN`
+- `CDN_HOST`
+
+## Docker 部署
+
+仓库已经提供：
+
+- [`Dockerfile`](./Dockerfile)
+- [`.dockerignore`](./.dockerignore)
+
+并且已经启用了 Next.js `output: "standalone"`，因此镜像会基于 `.next/standalone` 运行。
+
+### 构建镜像
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_LANGGRAPH_API_URL=https://langgraph.example.com \
+  --build-arg NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID=agent \
+  -t offerpilot-web:latest .
+```
+
+### 运行容器
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e LANGGRAPH_API_URL=http://langgraph:8123 \
+  -e LOGIN_CENTER_API_URL=https://login-center.example.com \
+  -e DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres \
+  -e OSS_ACCESS_KEY_ID=your-access-key-id \
+  -e OSS_ACCESS_KEY_SECRET=your-access-key-secret \
+  -e OSS_BUCKET=pattern-vault-cloud \
+  -e OSS_REGION=oss-cn-hangzhou \
+  -e OSS_ROLE_ARN=acs:ram::xxxx:role/xxxx \
+  -e CDN_HOST=cdn.example.com \
+  offerpilot-web:latest
+```
+
+## 部署注意事项
+
+### LangGraph 地址要区分浏览器和服务端
+
+当前项目同时使用两类地址：
+
+- `NEXT_PUBLIC_LANGGRAPH_API_URL`
+  给浏览器使用，必须是浏览器可访问的地址
+- `LANGGRAPH_API_URL`
+  给 Next.js 服务端使用，可以是容器网络里的内部地址
+
+如果二者都能用同一个公网地址，也可以设成一样。
+
+### `NEXT_PUBLIC_*` 不能在镜像构建后再改
+
+如果你把同一份镜像推广到多个环境，`NEXT_PUBLIC_*` 不会在容器启动时重新注入。它们只在 `docker build` 时生效。
+
+如果后续你需要“单镜像多环境”能力，建议再把客户端对 LangGraph 的访问改成运行时配置方案。
+
+## 当前已补齐的生产项
+
+- 已加入 `pg` 运行时依赖
+- 已启用 Next.js `standalone` 输出
+- 已补齐 Dockerfile
+- 已补齐 `.dockerignore`
+- 已补齐环境变量样例
+- 已保留数据库建表 SQL
+
+## 仍需要你在部署侧完成的事
+
+- 提供实际的 LangGraph / 登录中心 / PostgreSQL / OSS 生产配置
+- 执行 `sql/login-auth.sql`
+- 配置 HTTPS 与反向代理
+- 按你的基础设施补上 `docker-compose.yml`、Kubernetes、Nomad 或其他编排配置

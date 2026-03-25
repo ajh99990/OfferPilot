@@ -37,7 +37,7 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
-      "group flex w-full max-w-[95%] flex-col gap-2",
+      "group flex w-full max-w-[92%] flex-col gap-2",
       from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
       className
     )}
@@ -54,9 +54,9 @@ export const MessageContent = ({
 }: MessageContentProps) => (
   <div
     className={cn(
-      "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
+      "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
+      "group-[.is-user]:ml-auto group-[.is-user]:rounded-[24px] group-[.is-user]:bg-slate-950 group-[.is-user]:px-4 group-[.is-user]:py-3.5 group-[.is-user]:text-slate-50 group-[.is-user]:shadow-[0_14px_30px_rgba(15,23,42,0.18)]",
+      "group-[.is-assistant]:w-full group-[.is-assistant]:rounded-[24px] group-[.is-assistant]:border group-[.is-assistant]:border-slate-200/70 group-[.is-assistant]:bg-white/82 group-[.is-assistant]:px-5 group-[.is-assistant]:py-4 group-[.is-assistant]:text-slate-900 group-[.is-assistant]:shadow-[0_12px_34px_rgba(15,23,42,0.06)] backdrop-blur",
       className
     )}
     {...props}
@@ -322,12 +322,36 @@ export const MessageBranchPage = ({
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 const streamdownPlugins = { cjk, code, math, mermaid };
+const messageResponseTypographyClassName =
+  "size-full break-words text-[15px] leading-7 text-slate-800 selection:bg-sky-100 selection:text-slate-900 " +
+  "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 " +
+  "[&_p]:my-4 [&_p]:text-pretty [&_p]:leading-7 " +
+  "[&_strong]:font-semibold [&_strong]:text-slate-950 " +
+  "[&_em]:italic [&_em]:text-slate-700 " +
+  "[&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/30 [&_a]:underline-offset-4 hover:[&_a]:decoration-primary " +
+  "[&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:font-heading [&_h1]:text-[2rem] [&_h1]:leading-tight [&_h1]:tracking-[-0.04em] [&_h1]:text-slate-950 " +
+  "[&_h2]:mt-8 [&_h2]:mb-4 [&_h2]:font-heading [&_h2]:text-[1.6rem] [&_h2]:leading-tight [&_h2]:tracking-[-0.04em] [&_h2]:text-slate-950 " +
+  "[&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:font-heading [&_h3]:text-[1.25rem] [&_h3]:leading-tight [&_h3]:tracking-[-0.03em] [&_h3]:text-slate-950 " +
+  "[&_h4]:mt-5 [&_h4]:mb-3 [&_h4]:font-semibold [&_h4]:text-base [&_h4]:text-slate-900 " +
+  "[&_ul]:my-4 [&_ul]:list-outside [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 " +
+  "[&_ol]:my-4 [&_ol]:list-outside [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 " +
+  "[&_li]:pl-1 [&_li]:leading-7 [&_li::marker]:text-slate-400 [&_li>p]:my-0 [&_li>ul]:mt-2 [&_li>ol]:mt-2 " +
+  "[&_hr]:my-6 [&_hr]:border-slate-200 " +
+  "[&_blockquote]:my-5 [&_blockquote]:rounded-r-2xl [&_blockquote]:border-l-4 [&_blockquote]:border-sky-200 [&_blockquote]:bg-sky-50/70 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-slate-700 " +
+  "[&_code]:rounded-md [&_code]:bg-slate-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.92em] " +
+  "[&_pre]:my-5 [&_pre]:overflow-x-auto [&_pre]:rounded-[20px] [&_pre]:border [&_pre]:border-slate-200/80 [&_pre]:bg-slate-950 [&_pre]:px-4 [&_pre]:py-4 [&_pre]:text-slate-100 [&_pre]:shadow-none " +
+  "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[13px] [&_pre_code]:leading-7 [&_pre_code]:text-slate-100 " +
+  "[&_[data-streamdown='table-wrapper']]:my-5 [&_[data-streamdown='table-wrapper']]:overflow-x-auto [&_[data-streamdown='table-wrapper']]:rounded-[20px] [&_[data-streamdown='table-wrapper']]:border [&_[data-streamdown='table-wrapper']]:border-slate-200/80 [&_[data-streamdown='table-wrapper']]:bg-white/95 " +
+  "[&_table]:w-full [&_table]:min-w-[42rem] [&_table]:border-collapse [&_table]:text-sm " +
+  "[&_thead]:bg-slate-100/90 [&_th]:border-b [&_th]:border-slate-200 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:font-semibold [&_th]:text-slate-900 " +
+  "[&_td]:border-b [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top " +
+  "[&_img]:my-4 [&_img]:rounded-2xl [&_img]:border [&_img]:border-slate-200/70";
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        messageResponseTypographyClassName,
         className
       )}
       plugins={streamdownPlugins}

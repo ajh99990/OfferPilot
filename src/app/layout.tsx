@@ -1,21 +1,35 @@
+import { AppHeader } from "@/components/app-header";
+import { AuthProvider } from "@/components/auth-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  IBM_Plex_Mono,
+  Manrope,
+  Sora,
+} from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bodyFont = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const monoFont = IBM_Plex_Mono({
+  variable: "--font-code",
   subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
+const displayFont = Sora({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Next.js AI Elements Starter",
-  description: "Starter project for Next.js + AI Elements + TypeScript + Tailwind CSS",
+  title: "OfferPilot AgentOS",
+  description: "Mission-driven workspace for job applications and AI-assisted resume strategy.",
 };
 
 export default function RootLayout({
@@ -24,12 +38,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <TooltipProvider>{children}</TooltipProvider>
+      <html
+        lang="zh-CN"
+        className={`${bodyFont.variable} ${monoFont.variable} ${displayFont.variable} h-full overflow-hidden antialiased`}
+      >
+      <body className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+        <TooltipProvider>
+          <AuthProvider>
+            <AppHeader />
+            <main className="h-0 min-h-0 flex-1 overflow-hidden">{children}</main>
+          </AuthProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
-import { ChatStarter } from "@/components/chat-starter";
+import { MissionHome } from "@/components/mission-home";
 
-export default function Home() {
-  return <ChatStarter />;
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  return <MissionHome initialMissions={[]} initialLoadError={null} />;
 }
