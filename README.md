@@ -173,3 +173,6 @@ docker compose --env-file .env.production down
 - 执行 `sql/login-auth.sql`
 - 配置 HTTPS 与反向代理
 - 配置 HTTPS 与反向代理，让浏览器能访问 `NEXT_PUBLIC_LANGGRAPH_API_URL`
+
+使用docker-compose启动
+docker compose --env-file .env.production up -d --build
