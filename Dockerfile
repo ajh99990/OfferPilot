@@ -30,7 +30,7 @@ RUN test -n "$NEXT_PUBLIC_LANGGRAPH_API_URL" \
   || (echo "NEXT_PUBLIC_LANGGRAPH_API_URL build arg is required" >&2 && exit 1)
 RUN pnpm build
 
-FROM node:20-alpine AS runner
+FROM registry.cn-hangzhou.aliyuncs.com/rhett/useforself:node-20-17 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

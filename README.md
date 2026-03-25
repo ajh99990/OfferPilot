@@ -52,9 +52,8 @@ psql "$DATABASE_URL" -f sql/login-auth.sql
 
 环境变量模板分成两类：
 
-- [`.env.development.example`](./.env.development.example)：本地开发参考
+- [`.env.example`](./.env.example)：本地开发参考
 - [`.env.production.example`](./.env.production.example)：生产 / Docker 参考
-- [`.env.example`](./.env.example)：总入口说明
 
 最容易混淆的一点是数据库主机名：
 
@@ -88,32 +87,48 @@ psql "$DATABASE_URL" -f sql/login-auth.sql
 
 - [`Dockerfile`](./Dockerfile)
 - [`.dockerignore`](./.dockerignore)
+- [`docker-compose.yml`](./docker-compose.yml)
 
 并且已经启用了 Next.js `output: "standalone"`，因此镜像会基于 `.next/standalone` 运行。
 
-### 构建镜像
+### 服务器上的推荐操作方式
+
+GitHub 不应该保存真实的 `.env`。  
+因此在服务器上，推荐这样做：
 
 ```bash
-docker build \
-  --build-arg NEXT_PUBLIC_LANGGRAPH_API_URL=https://langgraph.example.com \
-  --build-arg NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID=agent \
-  -t offerpilot-web:latest .
+cp .env.production.example .env.production
 ```
 
-### 运行容器
+然后手动编辑服务器上的 `.env.production`，内容参考 [`.env.production.example`](./.env.production.example)。
+
+### 使用 docker compose 启动
 
 ```bash
-docker run --rm -p 3000:3000 \
-  -e LANGGRAPH_API_URL=http://langgraph:8123 \
-  -e LOGIN_CENTER_API_URL=https://login-center.example.com \
-  -e DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres \
-  -e OSS_ACCESS_KEY_ID=your-access-key-id \
-  -e OSS_ACCESS_KEY_SECRET=your-access-key-secret \
-  -e OSS_BUCKET=pattern-vault-cloud \
-  -e OSS_REGION=oss-cn-hangzhou \
-  -e OSS_ROLE_ARN=acs:ram::xxxx:role/xxxx \
-  -e CDN_HOST=cdn.example.com \
-  offerpilot-web:latest
+docker compose --env-file .env.production up -d --build
+```
+
+### 一套完整的服务器操作示例
+
+```bash
+git pull
+cp .env.production.example .env.production
+# 编辑 .env.production，填入真实生产配置
+psql "$DATABASE_URL" -f sql/login-auth.sql
+docker compose --env-file .env.production up -d --build
+```
+
+### 查看状态和日志
+
+```bash
+docker compose --env-file .env.production ps
+docker compose --env-file .env.production logs -f
+```
+
+### 停止服务
+
+```bash
+docker compose --env-file .env.production down
 ```
 
 ## 部署注意事项
@@ -128,6 +143,14 @@ docker run --rm -p 3000:3000 \
   给 Next.js 服务端使用，可以是容器网络里的内部地址
 
 如果二者都能用同一个公网地址，也可以设成一样。
+
+在你当前的部署方式里，`docker-compose.yml` 已经接入和 agent 侧一致的外部网络 `offerpilot_agent_shared`。  
+结合你现在的 agent compose：
+
+- `LANGGRAPH_API_URL` 应该写成 `http://langgraph-api:8000`
+- `NEXT_PUBLIC_LANGGRAPH_API_URL` 仍然应该写浏览器可访问的地址，比如反向代理后的公网域名
+
+也就是说，浏览器侧不要写 `http://langgraph-api:8000`，因为浏览器无法解析 Docker 内部 service name。
 
 ### `NEXT_PUBLIC_*` 不能在镜像构建后再改
 
@@ -149,4 +172,4 @@ docker run --rm -p 3000:3000 \
 - 提供实际的 LangGraph / 登录中心 / PostgreSQL / OSS 生产配置
 - 执行 `sql/login-auth.sql`
 - 配置 HTTPS 与反向代理
-- 按你的基础设施补上 `docker-compose.yml`、Kubernetes、Nomad 或其他编排配置
+- 配置 HTTPS 与反向代理，让浏览器能访问 `NEXT_PUBLIC_LANGGRAPH_API_URL`

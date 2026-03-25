@@ -1,0 +1,31 @@
+services:
+  offerpilot-web:
+    image: ${IMAGE_NAME:-offerpilot-web}:${IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME:-offerpilot-web}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_LANGGRAPH_API_URL: ${NEXT_PUBLIC_LANGGRAPH_API_URL}
+        NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID: ${NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID:-agent}
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LANGGRAPH_API_URL: ${LANGGRAPH_API_URL}
+      LOGIN_CENTER_API_URL: ${LOGIN_CENTER_API_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID}
+      OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET}
+      OSS_BUCKET: ${OSS_BUCKET}
+      OSS_REGION: ${OSS_REGION}
+      OSS_ROLE_ARN: ${OSS_ROLE_ARN}
+      CDN_HOST: ${CDN_HOST}
+    networks:
+      - offerpilot_agent_shared
+
+networks:
+  offerpilot_agent_shared:
+    external: true
