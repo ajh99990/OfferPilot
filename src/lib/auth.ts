@@ -1,6 +1,5 @@
 export const LOGIN_CENTER_API_URL =
-  process.env.LOGIN_CENTER_API_URL?.trim() ||
-  "https://ygstudio.online/login-center";
+  process.env.LOGIN_CENTER_API_URL?.trim()
 
 export const ACCESS_TOKEN_COOKIE = "offerpilot_access_token";
 export const REFRESH_TOKEN_COOKIE = "offerpilot_refresh_token";
