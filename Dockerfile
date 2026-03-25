@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM registry.cn-hangzhou.aliyuncs.com/rhett/useforself:node-20-17 AS base
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PNPM_HOME="/pnpm"
