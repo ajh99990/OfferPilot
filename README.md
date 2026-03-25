@@ -25,7 +25,7 @@ pnpm install
 pnpm dev
 ```
 
-默认打开：`http://localhost:3000`
+默认打开：`http://localhost:3088`
 
 ## 生产部署前置条件
 

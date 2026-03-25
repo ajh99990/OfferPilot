@@ -10,7 +10,7 @@ services:
         NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID: ${NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID:-agent}
     restart: unless-stopped
     ports:
-      - "${HOST_PORT:-3000}:3000"
+      - "${HOST_PORT:-3088}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
